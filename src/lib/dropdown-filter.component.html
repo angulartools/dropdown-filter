@@ -1,0 +1,42 @@
+<div
+  class="dropdown-wrapper"
+  [ngStyle]="{ 'border-color': selectedColor() || '#d1d5db' }"
+  [matMenuTriggerFor]="menu"
+  >
+  <span [ngStyle]="{ color: selectedColor() || '#111827' }">
+    {{ displayLabel() }}
+  </span>
+  @if (hasSelection()) {
+    <mat-icon
+      (click)="clearSelection($event)"
+      >
+      close
+    </mat-icon>
+  }
+  <mat-icon>expand_more</mat-icon>
+</div>
+
+<mat-menu #menu="matMenu" class="filter-menu" xPosition="after" yPosition="below">
+  @for (group of groupedOptions() | keyvalue : compareByNone; track group) {
+    <!-- Oculta label do grupo se for grupo "sem nome" -->
+    @if (group.key !== '__ungrouped__') {
+      <p class="group-label mb-0">{{ group.key | translate }}</p>
+    }
+    @for (option of group.value; track option) {
+      <button
+        mat-menu-item
+        (click)="onSelection(option)"
+        class="menu-item"
+        >
+        @if (option.icon) {
+          <mat-icon
+            class="custom-icon"
+            [ngStyle]="{ color: option.color }">
+            {{ option.icon }}
+          </mat-icon>
+        }
+      <span [ngStyle]="{ fontWeight: isSelected(option) ? 'bold' : 'normal' }" class="option-label">{{ option.label | translate }}</span>
+    </button>
+  }
+}
+</mat-menu>
