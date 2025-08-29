@@ -1,12 +1,12 @@
 {
   "name": "@angulartoolsdr/dropdown-filter",
-  "version": "20.2.1",
+  "version": "20.2.2",
   "peerDependencies": {
-    "@angular/common": "20.2.1",
-    "@angular/core": "20.2.1",
-    "@angular/material": "20.2.0",
-    "@angular/forms": "20.2.1",
-    "@angulartoolsdr/translation": "20.2.1"
+    "@angular/common": "20.2.2",
+    "@angular/core": "20.2.2",
+    "@angular/material": "20.2.1",
+    "@angular/forms": "20.2.2",
+    "@angulartoolsdr/translation": "20.2.2"
   },
   "dependencies": {
     "tslib": "^2.8.1"
