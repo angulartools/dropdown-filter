@@ -1,6 +1,6 @@
 // dropdown-filter.component.ts
 import { Component, Input, Output, EventEmitter, signal, computed, inject } from '@angular/core';
-import { NgStyle, KeyValuePipe } from '@angular/common';
+import { NgStyle, NgClass, KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslationPipe, TranslationService } from '@angulartoolsdr/translation';
 import { MatMenuModule } from '@angular/material/menu';
@@ -17,7 +17,7 @@ export interface FilterOption {
 
 @Component({
   selector: 'te-dropdown-filter',
-  imports: [NgStyle, KeyValuePipe, MatMenuModule, MatIconButton, FormsModule, TranslationPipe],
+  imports: [NgStyle, NgClass, KeyValuePipe, MatMenuModule, MatIconButton, FormsModule, TranslationPipe],
   templateUrl: './dropdown-filter.html',
   styleUrls: ['./dropdown-filter.scss'],
 })
