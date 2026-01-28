@@ -1,32 +1,31 @@
 // dropdown-filter.component.ts
 import { Component, Input, Output, EventEmitter, signal, computed, inject } from '@angular/core';
 import { NgStyle, KeyValuePipe } from '@angular/common';
-import { MatIconButton } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
-import { MatIcon } from '@angular/material/icon';
-import { MatCard } from '@angular/material/card';
 import { TranslationPipe, TranslationService } from '@angulartoolsdr/translation';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatIconButton } from '@angular/material/button';
 
 export interface FilterOption {
-  label: string;
+  nome: string;
   id?: number,
   group?: string,
+  nomeCaixa?: string,
   icon?: string,
-  color?: string,
-  labelInput?: string,
+  color?: string
 }
 
 @Component({
-  selector: 'lib-dropdown-filter',
-  imports: [NgStyle, KeyValuePipe, MatMenuModule, MatCard, MatIcon, MatIconButton, FormsModule, TranslationPipe],
-  templateUrl: './dropdown-filter.component.html',
-  styleUrls: ['./dropdown-filter.component.scss'],
+  selector: 'te-dropdown-filter',
+  imports: [NgStyle, KeyValuePipe, MatMenuModule, MatIconButton, FormsModule, TranslationPipe],
+  templateUrl: './dropdown-filter.html',
+  styleUrls: ['./dropdown-filter.scss'],
 })
-export class DropdownFilterComponent {
+
+export class DropdownFilter {
+
   @Input() options: FilterOption[] = [];
   @Input() multiple = false;
-  @Input() label?: string;
   @Input() prefix?: string;
   @Input() showPrefix = false;
 
@@ -50,28 +49,51 @@ export class DropdownFilterComponent {
   // Mostra a label combinada com o valor selecionado
   displayLabel = computed(() => {
     const selectedValue = this.selected();  // Store the value first
-    
+
     if (!selectedValue) {  // Check for null/undefined
       return this.showPrefix && this.prefix ? `${this.prefix}: ${this.translate.instant('TODOS')}` : this.translate.instant('TODOS');
     }
-  
+
     if (Array.isArray(selectedValue) && selectedValue.length === 0) {  // Check for empty array
       return this.showPrefix && this.prefix ? `${this.prefix}: ${this.translate.instant('TODOS')}` : this.translate.instant('TODOS');
     }
-  
-    const value = Array.isArray(selectedValue) ? selectedValue.map(opt => this.translate.instant(opt.label)).join(', ') : this.translate.instant(selectedValue.label);
 
-      if (!Array.isArray(selectedValue) && selectedValue.labelInput) {
-        const returnValue = selectedValue.labelInput ? this.translate.instant(selectedValue.labelInput) : value;
-        return this.showPrefix && this.prefix ? `${this.prefix}: ${returnValue}` : returnValue;
-      }
-  
+    const value = Array.isArray(selectedValue) ? selectedValue.map(opt => this.translate.instant(opt.nome)).join(', ') : this.translate.instant(selectedValue.nome);
+
+    if (!Array.isArray(selectedValue) && this.getLabelInput(selectedValue)) {
+      const returnValue = this.getLabelInput(selectedValue) ? this.translate.instant(this.getLabelInput(selectedValue)) : value;
+      return this.showPrefix && this.prefix ? `${this.prefix}: ${returnValue}` : returnValue;
+    }
+
     return this.showPrefix && this.prefix ? `${this.prefix}: ${value}` : value;
   });
 
+  getLabelInput(selectedValue: FilterOption) {
+    switch (selectedValue.nomeCaixa) {
+      case 'DISPOSITIVO_ASSOCIADO':
+      case 'SIMCARD_ASSOCIADO':
+        if (selectedValue.nome === 'SIM') {
+          return 'ASSOCIADO';
+        }
+        return 'NAO_ASSOCIADO';
+
+      case 'DISPOSITIVO_ONLINE_OFFLINE':
+      case 'SIMCARD_SITUACAO_LINHA':
+      case 'SIMCARD_OPERADORA':
+        return selectedValue.nome;
+
+      case 'SIMCARD_SITUACAO_CONSUMO':
+        if (selectedValue.nome === 'SIM') {
+          return 'BLOQUEADO_CONSUMO';
+        }
+        return 'NAO_BLOQUEADO_CONSUMO';
+    }
+    return '';
+  }
+
   groupedOptions = computed(() => {
     const groups: Record<string, FilterOption[]> = {};
-  
+
     for (const option of this.options) {
       const groupKey = option.group || '__ungrouped__';
       if (!groups[groupKey]) {
@@ -79,7 +101,7 @@ export class DropdownFilterComponent {
       }
       groups[groupKey].push(option);
     }
-  
+
     return groups;
   });
 
@@ -93,11 +115,11 @@ export class DropdownFilterComponent {
 
   isSelected(option: FilterOption): boolean {
     if (Array.isArray(this.selected())) {
-      return (this.selected() as FilterOption[]).map(opt => opt.label).includes(option.label);
+      return (this.selected() as FilterOption[]).map(opt => opt.nome).includes(option.nome);
     }
     return this.selected() === option;
   }
-  
+
   onSelection(option: FilterOption) {
     if (this.multiple) {
       const current = new Set(this.selected() as FilterOption[] || []);
@@ -122,21 +144,21 @@ export class DropdownFilterComponent {
 
   selectedColor(): string | undefined {
     if (!this.selected() || this.multiple) return undefined;
-  
+
     const selectedValue = this.selected() as FilterOption;
-  
+
     const selected = this.options.find(opt => {
       const sameId = opt.id === selectedValue.id;
       const hasGroup = !!opt.group;
-  
+
       if (hasGroup && selectedValue.group) {
         return sameId && opt.group === selectedValue.group;
       }
-  
+
       return sameId;
     });
-  
+
     return selected?.color;
   }
-  
+
 }

@@ -7,13 +7,13 @@
     {{ displayLabel() }}
   </span>
   @if (hasSelection()) {
-    <mat-icon
-      (click)="clearSelection($event)"
-      >
-      close
-    </mat-icon>
+    <button mat-icon-button (click)="clearSelection($event)">
+      <i style="font-size: 0.55em" class="far fa-xmark"></i>
+    </button>
   }
-  <mat-icon>expand_more</mat-icon>
+  <button [class.ml-n2]="hasSelection()" mat-icon-button>
+    <i style="font-size: 0.55em" class="fa fa-angle-down"></i>
+  </button>
 </div>
 
 <mat-menu #menu="matMenu" class="filter-menu" xPosition="after" yPosition="below">
@@ -29,13 +29,12 @@
         class="menu-item"
         >
         @if (option.icon) {
-          <mat-icon
-            class="custom-icon"
-            [ngStyle]="{ color: option.color }">
-            {{ option.icon }}
-          </mat-icon>
+          <i style="font-size: 0.6em;" class="mr-3"
+            [ngStyle]="{ color: option.color }"
+            [ngClass]="option.icon">
+          </i>
         }
-      <span [ngStyle]="{ fontWeight: isSelected(option) ? 'bold' : 'normal' }" class="option-label">{{ option.label | translate }}</span>
+      <span [ngStyle]="{ fontWeight: isSelected(option) ? 'bold' : 'normal' }" class="option-label">{{ option.nome | translate }}</span>
     </button>
   }
 }
