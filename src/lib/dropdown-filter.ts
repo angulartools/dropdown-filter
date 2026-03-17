@@ -16,7 +16,7 @@ export interface FilterOption {
 }
 
 @Component({
-  selector: 'te-dropdown-filter',
+  selector: 'lib-dropdown-filter',
   imports: [NgStyle, NgClass, KeyValuePipe, MatMenuModule, MatIconButton, FormsModule, TranslationPipe],
   templateUrl: './dropdown-filter.html',
   styleUrls: ['./dropdown-filter.scss'],
@@ -74,8 +74,10 @@ export class DropdownFilter {
       case 'SIMCARD_ASSOCIADO':
         if (selectedValue.nome === 'SIM') {
           return 'ASSOCIADO';
+        } else if (selectedValue.nome === 'NAO') {
+          return 'NAO_ASSOCIADO';
         }
-        return 'NAO_ASSOCIADO';
+        return selectedValue.nome;
 
       case 'DISPOSITIVO_ONLINE_OFFLINE':
       case 'SIMCARD_SITUACAO_LINHA':
@@ -85,8 +87,10 @@ export class DropdownFilter {
       case 'SIMCARD_SITUACAO_CONSUMO':
         if (selectedValue.nome === 'SIM') {
           return 'BLOQUEADO_CONSUMO';
+        } else if (selectedValue.nome === 'NAO') {
+          return 'NAO_BLOQUEADO_CONSUMO';
         }
-        return 'NAO_BLOQUEADO_CONSUMO';
+        return selectedValue.nome;
     }
     return '';
   }
