@@ -1,168 +1,200 @@
-// dropdown-filter.component.ts
-import { Component, Input, Output, EventEmitter, signal, computed, inject } from '@angular/core';
-import { NgStyle, NgClass, KeyValuePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { TranslationPipe, TranslationService } from '@angulartoolsdr/translation';
+import { Component, ChangeDetectionStrategy, computed, effect, inject, input, output, signal } from '@angular/core';
+import { NgClass, KeyValuePipe } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconButton } from '@angular/material/button';
+import { TranslationPipe, TranslationService } from '@angulartoolsdr/translation';
 
 export interface FilterOption {
   nome: string;
-  id?: number,
-  group?: string,
-  nomeCaixa?: string,
-  icon?: string,
-  color?: string
+  id?: number;
+  group?: string;
+  nomeCaixa?: string;
+  icon?: string;
+  color?: string;
 }
 
 @Component({
   selector: 'lib-dropdown-filter',
-  imports: [NgStyle, NgClass, KeyValuePipe, MatMenuModule, MatIconButton, FormsModule, TranslationPipe],
+  imports: [NgClass, KeyValuePipe, MatMenuModule, MatIconButton, TranslationPipe],
   templateUrl: './dropdown-filter.html',
   styleUrls: ['./dropdown-filter.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-
 export class DropdownFilter {
 
-  @Input() options: FilterOption[] = [];
-  @Input() multiple = false;
-  @Input() prefix?: string;
-  @Input() showPrefix = false;
+  readonly options = input<FilterOption[]>([]);
+  readonly multiple = input(false);
+  readonly prefix = input<string>();
+  readonly showPrefix = input(false);
+  readonly value = input<FilterOption | FilterOption[] | null>(null);
 
-  @Input('value') set setValue(value: FilterOption | FilterOption[] | null) {
-    //console.log('setValue', value);
-    if (value === null || (Array.isArray(value) && value.length === 0)) {
-      this.selected.set(this.multiple ? [] : null);
-    } else {
-      this.selected.set(value);
-    }
+  readonly confirm = output<FilterOption | FilterOption[] | null>();
+  readonly cancel = output<void>();
+
+  private readonly translate = inject(TranslationService);
+
+  readonly selected = signal<FilterOption | FilterOption[] | null>(null);
+
+  constructor() {
+
+    effect(() => {
+
+      const value = this.value();
+
+      if (value === null || (Array.isArray(value) && value.length === 0)) {
+        this.selected.set(
+          this.multiple() ? [] : null
+        );
+      } else {
+        this.selected.set(value);
+      }
+
+    });
   }
 
-  @Output() confirm = new EventEmitter<FilterOption | FilterOption[]>();
-  @Output() cancel = new EventEmitter<void>();
+  readonly displayLabel = computed(() => {
+    const selected = this.selected();
 
-  translate = inject(TranslationService);
-  selected = signal<FilterOption | FilterOption[] | null>(null);
-
-  compareByNone = () => 0; // função que retorna sempre 0 para desativar o sort
-
-  // Mostra a label combinada com o valor selecionado
-  displayLabel = computed(() => {
-    const selectedValue = this.selected();  // Store the value first
-
-    if (!selectedValue) {  // Check for null/undefined
-      return this.showPrefix && this.prefix ? `${this.prefix}: ${this.translate.instant('TODOS')}` : this.translate.instant('TODOS');
+    if (!selected) {
+      return this.defaultLabel();
     }
 
-    if (Array.isArray(selectedValue) && selectedValue.length === 0) {  // Check for empty array
-      return this.showPrefix && this.prefix ? `${this.prefix}: ${this.translate.instant('TODOS')}` : this.translate.instant('TODOS');
+    if (Array.isArray(selected) && selected.length === 0) {
+      return this.defaultLabel();
     }
 
-    const value = Array.isArray(selectedValue) ? selectedValue.map(opt => this.translate.instant(opt.nome)).join(', ') : this.translate.instant(selectedValue.nome);
+    const text =
+      Array.isArray(selected)
+        ? selected
+          .map(x => this.translate.instant(x.nome))
+          .join(', ')
+        : this.translate.instant(
+          this.getLabelInput(selected) || selected.nome
+        );
 
-    if (!Array.isArray(selectedValue) && this.getLabelInput(selectedValue)) {
-      const returnValue = this.getLabelInput(selectedValue) ? this.translate.instant(this.getLabelInput(selectedValue)) : value;
-      return this.showPrefix && this.prefix ? `${this.prefix}: ${returnValue}` : returnValue;
-    }
+    return this.showPrefix() && this.prefix() ? `${this.prefix()}: ${text}` : text;
 
-    return this.showPrefix && this.prefix ? `${this.prefix}: ${value}` : value;
   });
 
-  getLabelInput(selectedValue: FilterOption) {
-    switch (selectedValue.nomeCaixa) {
-      case 'DISPOSITIVO_ASSOCIADO':
-      case 'SIMCARD_ASSOCIADO':
-        if (selectedValue.nome === 'SIM') {
-          return 'ASSOCIADO';
-        } else if (selectedValue.nome === 'NAO') {
-          return 'NAO_ASSOCIADO';
-        }
-        return selectedValue.nome;
+  readonly groupedOptions = computed(() => {
 
-      case 'DISPOSITIVO_ONLINE_OFFLINE':
-      case 'SIMCARD_SITUACAO_LINHA':
-      case 'SIMCARD_OPERADORA':
-        return selectedValue.nome;
-
-      case 'SIMCARD_SITUACAO_CONSUMO':
-        if (selectedValue.nome === 'SIM') {
-          return 'BLOQUEADO_CONSUMO';
-        } else if (selectedValue.nome === 'NAO') {
-          return 'NAO_BLOQUEADO_CONSUMO';
-        }
-        return selectedValue.nome;
-    }
-    return '';
-  }
-
-  groupedOptions = computed(() => {
     const groups: Record<string, FilterOption[]> = {};
 
-    for (const option of this.options) {
-      const groupKey = option.group || '__ungrouped__';
-      if (!groups[groupKey]) {
-        groups[groupKey] = [];
-      }
-      groups[groupKey].push(option);
+    for (const option of this.options()) {
+
+      const key = option.group ?? '__ungrouped__';
+      groups[key] ??= [];
+      groups[key].push(option);
+
     }
 
     return groups;
+
   });
 
-  onConfirm() {
-    this.confirm.emit(this.selected());
-  }
+  readonly hasSelection = computed(() => {
+    const value = this.selected();
 
-  onCancel() {
-    this.cancel.emit();
-  }
+    return Array.isArray(value) ? value.length > 0 : !!value;
 
-  isSelected(option: FilterOption): boolean {
-    if (Array.isArray(this.selected())) {
-      return (this.selected() as FilterOption[]).map(opt => opt.nome).includes(option.nome);
+  });
+
+  readonly selectedColor = computed(() => {
+
+    const value = this.selected();
+
+    if (!value || Array.isArray(value)) {
+      return undefined;
     }
-    return this.selected() === option;
-  }
+
+    const found = this.options().find(opt => {
+
+      if (value.group && opt.group) {
+        return (opt.id === value.id && opt.group === value.group
+        );
+      }
+      return opt.id === value.id;
+
+    });
+
+    return found?.color;
+
+  });
+
+  compareByNone = () => 0;
 
   onSelection(option: FilterOption) {
-    if (this.multiple) {
-      const current = new Set(this.selected() as FilterOption[] || []);
+
+    if (this.multiple()) {
+      const current = new Set(this.selected() as FilterOption[] ?? []);
+
       current.has(option) ? current.delete(option) : current.add(option);
+
       this.selected.set(Array.from(current));
+
     } else {
+
       this.selected.set(option);
       this.confirm.emit(option);
+
     }
+
   }
 
-  hasSelection(): boolean {
+  isSelected(option: FilterOption) {
+
     const value = this.selected();
-    return Array.isArray(value) ? value.length > 0 : !!value;
+
+    if (Array.isArray(value)) {
+
+      return value.some(
+        x => x.nome === option.nome
+      );
+
+    }
+
+    return value === option;
+
   }
 
   clearSelection(event: MouseEvent) {
-    event.stopPropagation(); // impede de abrir o menu ao clicar no X
-    this.selected.set(this.multiple ? [] : null);
-    this.confirm.emit(this.multiple ? [] : null);
+
+    event.stopPropagation();
+
+    const value = this.multiple() ? [] : null;
+    this.selected.set(value);
+    this.confirm.emit(value);
+
   }
 
-  selectedColor(): string | undefined {
-    if (!this.selected() || this.multiple) return undefined;
+  getLabelInput(value: FilterOption): string {
 
-    const selectedValue = this.selected() as FilterOption;
+    switch (value.nomeCaixa) {
 
-    const selected = this.options.find(opt => {
-      const sameId = opt.id === selectedValue.id;
-      const hasGroup = !!opt.group;
+      case 'DISPOSITIVO_ASSOCIADO':
+      case 'SIMCARD_ASSOCIADO':
 
-      if (hasGroup && selectedValue.group) {
-        return sameId && opt.group === selectedValue.group;
-      }
+        if (value.nome === 'SIM') {
+          return 'ASSOCIADO';
+        }
 
-      return sameId;
-    });
+        if (value.nome === 'NAO') {
+          return 'NAO_ASSOCIADO';
+        }
 
-    return selected?.color;
+        return value.nome;
+
+      default:
+        return value.nome;
+    }
+  }
+
+  private defaultLabel() {
+
+    const text = this.translate.instant('TODOS');
+
+    return this.showPrefix() && this.prefix() ? `${this.prefix()}: ${text}` : text;
+
   }
 
 }

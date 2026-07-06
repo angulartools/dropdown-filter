@@ -1,41 +1,56 @@
-<div
-  class="dropdown-wrapper"
-  [ngStyle]="{ 'border-color': selectedColor() || '#d1d5db' }"
-  [matMenuTriggerFor]="menu"
-  >
-  <span [ngStyle]="{ color: selectedColor() || '#111827' }">
+<div class="dropdown-wrapper"
+  [style.border-color]="selectedColor() || '#d1d5db'"
+  [matMenuTriggerFor]="menu">
+
+  <span [style.color]="selectedColor() || '#111827'">
     {{ displayLabel() }}
   </span>
+
   @if (hasSelection()) {
-    <button mat-icon-button (click)="clearSelection($event)">
+
+    <button mat-icon-button type="button" (click)="clearSelection($event)">
       <i style="font-size: 0.55em" class="far fa-xmark"></i>
     </button>
+
   }
-  <button [class.ml-n2]="hasSelection()" mat-icon-button>
+
+  <button mat-icon-button type="button" [class.ml-n2]="hasSelection()">
     <i style="font-size: 0.55em" class="fa fa-angle-down"></i>
   </button>
+
 </div>
 
 <mat-menu #menu="matMenu" class="filter-menu" xPosition="after" yPosition="below">
-  @for (group of groupedOptions() | keyvalue : compareByNone; track group) {
-    <!-- Oculta label do grupo se for grupo "sem nome" -->
+
+  @for (group of groupedOptions() | keyvalue : compareByNone; track group.key) {
+
     @if (group.key !== '__ungrouped__') {
-      <p class="group-label mb-0">{{ group.key | translate }}</p>
+      <p class="group-label mb-0">
+        {{ group.key | translate }}
+      </p>
     }
-    @for (option of group.value; track option) {
-      <button
-        mat-menu-item
-        (click)="onSelection(option)"
-        class="menu-item"
-        >
+
+    @for (option of group.value; track option.id ?? option.nome) {
+
+      <button mat-menu-item class="menu-item" (click)="onSelection(option)">
+
         @if (option.icon) {
-          <i style="font-size: 0.6em;" class="mr-3"
-            [ngStyle]="{ color: option.color }"
-            [ngClass]="option.icon">
-          </i>
+          <i
+            class="mr-3"
+            style="font-size:0.6em"
+            [ngClass]="option.icon"
+            [style.color]="option.color"
+          ></i>
         }
-      <span [ngStyle]="{ fontWeight: isSelected(option) ? 'bold' : 'normal' }" class="option-label">{{ option.nome | translate }}</span>
-    </button>
+
+        <span class="option-label" [style.fontWeight]="isSelected(option) ? 'bold' : 'normal'">
+          {{ option.nome | translate }}
+        </span>
+
+      </button>
+
+    }
+
   }
-}
+
 </mat-menu>
